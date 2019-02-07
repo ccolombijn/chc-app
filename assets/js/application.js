@@ -8,12 +8,12 @@ const application = (() => {
     application.route()
     application.nav()
     if( config.debug ) debug()
-  },route = ( endpoint ) => {
-    if( !endpoint ) endpoint = config.endpoint();
-
-    if( endpoint === '' ) endpoint = config.default;
+  },
+  route = ( endpoint ) => {
+    if( !endpoint ) endpoint = config.endpoint()
+    if( endpoint === '' ) endpoint = config.default
     if( typeof endpoint === 'object' ) endpoint = endpoint.newURL.split( '#' )[1]
-    let pointer = endpoint.split( '/' )[2]
+    const pointer = endpoint.split( '/' )[2]
     if( pointer !== '' ) endpoint = `${endpoint.split( '/' )[0]}/${endpoint.split( '/' )[1]}`
     try {
       for( let module of config.modules() ) {
@@ -33,7 +33,8 @@ const application = (() => {
 
       setTimeout(function(){ location.reload() }, 3000);
     }
-  },load = ( endpoint ) => {
+  },
+  load = ( endpoint ) => {
     if( endpoint === application.data.endpoint ) return
     if( !endpoint ) endpoint = config.endpoint
 
@@ -45,13 +46,14 @@ const application = (() => {
       property : 'responseText',
       response : 'page',
       callback : () => {
-        UI.mainContent().innerHTML = application.data.response[ args.response ][ args.property ]
+        UI.mainContent.innerHTML = application.data.response[ args.response ][ args.property ]
       }
     }
     application.data.endpoint = endpoint;
     tool.xhr( args, tool.response )
     window.onhashchange = route
-  },nav = ( items ) => {
+  },
+  nav = ( items ) => {
     if( !items ) items = config.modules();
     let nav = []
     for( let item of items ){
@@ -61,18 +63,16 @@ const application = (() => {
     }
     application.data.nav = nav;
     UI.nav( nav )
-  },debug = () => {
-
+  },
+  debug = () => {
     for( let item of config.debugItems() ) console.log( item )
   }
-  let data = {
+  const data = {
     endpoint : undefined,
     response : {},
     store: {},
     nav : []
   }
-
-
   return {
     init : init,
     route : route,
@@ -80,7 +80,6 @@ const application = (() => {
     nav : nav,
     data : data
   }
-
 })()
 
 /*
@@ -233,6 +232,20 @@ const tool = (function() {
       tool.formData( this )
   }
 
+  const checkObj = function( obj ) {
+    if( !obj ) {
+      console.warn( 'tool.overview : args.object is undefined' )
+      return
+    } else if ( !typeof obj === 'object' ) {
+      console.warn( 'tool.overview : args.object is not a object' )
+      return
+    }
+  }
+
+  Object.prototype.checkObj = function() {
+      tool.checkObj( this )
+  }
+
   /* ---------------------------------------------------------------------------
   * get
   */
@@ -244,11 +257,8 @@ const tool = (function() {
 
     args.key ? key = args.key : key = 'id'
     for( let item of data ){
-      let match = (pointer) => isNaN( pointer ) ?  item[ key ] : item[ key ]/1
-      if( match( args.match ) === args.match ) {
-
-        return item
-      }
+      let match = (pointer) => isNaN( pointer ) ?  item[ key ] : parseInt( item[ key ] )
+      if( match( args.match ) === args.match ) return item
     }
   }
   /* let arr = [ { id : 1 , text : 'test' }, { id : 2 , text : 'test' } ]
@@ -281,7 +291,13 @@ const tool = (function() {
       args[ 'data' ] = this
       tool.getAll( args )
   }
-
+  /* ---------------------------------------------------------------------------
+  * parse
+  */
+  const parse = ( args, callback ) => {
+    const args = [].slice.call(arguments, 1),i = 0;
+    return str.replace(/%s/g, () => args[i++]);
+  }
   /* ---------------------------------------------------------------------------
   * test
   */
@@ -305,6 +321,9 @@ const tool = (function() {
     xhr : xhr,
     fetchXhr : fetchXhr,
     formData : formData,
+    get : get,
+    getAll : getAll,
+    parse : parse,
     test : test,
   }
 })()
@@ -385,11 +404,10 @@ const UI = (function(){
   * nav
   */
   let nav = ( args, callback ) => {
-
     const _ = tool,
-    ul = _.make( [ 'ul' ] )
-    for( let item of args ){
-
+    ul = _.make( [ 'ul' ] ),
+    items = args;
+    for( let item of items ){
       ul.appendChild( _.make( ['li', [ 'a', { href : item.href }, item.label ] ] ) )
       if( item.children ){
 
@@ -403,26 +421,23 @@ const UI = (function(){
   * overview
   */
   let overview = ( args, callback ) => {
-    const _ = tool;
-    let obj = args.object;
-    if( !obj ) {
-      console.warn( 'tool.overview : args.object is undefined' )
-      return
-    }
+    const _ = tool
+    const obj = args.object
+    _.checkObj( obj )
     if( args.debug || config.debug ) console.log( obj )
     let objProps = Object.getOwnPropertyNames( obj ),
     overview = _.make( 'table' ),
     overviewHeader = _.make( 'thead' ),
     overviewHeaderRow = _.make( 'tr' ),
-    overviewBody = _.make( 'tbody' )
+    overviewBody = _.make( 'tbody' );
     for( let prop of objProps ){
       if( args.headers ){
         overviewHeaderRow.appendChild( _.make( 'th', args.headers[ prop ] ) )
       } else {
-        typeof obj.labels() !== 'undefined' ? overviewHeaderRow.appendChild( _.make( 'th', obj.labels()[ prop ] ) ) : overviewHeaderRow.appendChild( _.make( 'th',  prop ) )
+        obj.labels() ? overviewHeaderRow.appendChild( _.make( 'th', obj.labels()[ prop ] ) ) : overviewHeaderRow.appendChild( _.make( 'th',  prop ) )
       }
     }
-    if( typeof args === 'function' ) callback = args;
+    if( typeof args === 'function' ) callback = args
     if( callback ) callback()
     return overview
   }
@@ -431,9 +446,11 @@ const UI = (function(){
   let overview = objInst.overview()
   */
   Object.prototype.overview = function( args, callback ) {
+      if( typeof args === 'function' ) callback = args
       if( !args ) args = {}
       args[ 'object' ] = this;
       tool.overview( args, callback )
+
   }
   /* ---------------------------------------------------------------------------
   * view
@@ -467,8 +484,6 @@ const UI = (function(){
     if( typeof args === 'function' ) callback = args;
     if( callback ) callback()
   }
-
-
   return {
     header : header,
     headerNav : headerNav,
