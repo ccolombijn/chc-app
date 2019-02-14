@@ -5,16 +5,18 @@
 const application = (() => {
 
   const init = () => {
-    application.route()
-    application.nav()
+    route()
+    nav()
     if( config.debug ) debug()
   },
   route = ( endpoint ) => {
     if( !endpoint ) endpoint = config.endpoint()
     if( endpoint === '' ) endpoint = config.default
     if( typeof endpoint === 'object' ) endpoint = endpoint.newURL.split( '#' )[1]
+    const page = endpoint.split( '/' )[1]
+    const action = endpoint.split( '/' )[1]
     const pointer = endpoint.split( '/' )[2]
-    if( pointer !== '' ) endpoint = `${endpoint.split( '/' )[0]}/${endpoint.split( '/' )[1]}`
+    if( pointer !== '' ) endpoint = `${page}/${action}`
     try {
       for( let module of config.modules() ) {
         if( module.route === endpoint ){
@@ -54,7 +56,7 @@ const application = (() => {
     window.onhashchange = route
   },
   nav = ( items ) => {
-    if( !items ) items = config.modules();
+    if( !items ) items = config.modules()
     let nav = []
     for( let item of items ){
       if( item.nav ){
@@ -291,13 +293,7 @@ const tool = (function() {
       args[ 'data' ] = this
       tool.getAll( args )
   }
-  /* ---------------------------------------------------------------------------
-  * parse
-  */
-  const parse = ( args, callback ) => {
-    const args = [].slice.call(arguments, 1),i = 0;
-    return str.replace(/%s/g, () => args[i++]);
-  }
+
   /* ---------------------------------------------------------------------------
   * test
   */
@@ -323,7 +319,6 @@ const tool = (function() {
     formData : formData,
     get : get,
     getAll : getAll,
-    parse : parse,
     test : test,
   }
 })()
